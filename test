@@ -1,0 +1,8 @@
+#! /bin/sh
+
+if `lsmod 2>/dev/null | grep -q brl_usb` ; then
+   sudo rmmod brl_usb.ko 
+fi
+
+sudo insmod brl_usb.ko
+echo "okay."

@@ -1,0 +1,41 @@
+#!/bin/sh -e
+### BEGIN INIT INFO
+# Provides:          brl_usb
+# Required-Start:    
+# Required-Stop:     
+# Default-Start:     
+# Default-Stop:      0 6
+# Short-Description: Control the BRL USB board driver
+### END INIT INFO
+
+PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
+
+case "$1" in
+
+start)
+	echo "Loading brl_usb board driver..."
+	/sbin/insmod /opt/Dropbox/raven_2/usb_driver/brl_usb.ko
+	;;
+
+stop)
+	echo "Unloading brl_usb board driver..."
+	/sbin/rmmod brl_usb
+	;;
+
+force-reload|restart)
+	echo "Unloading brl_usb board driver..."
+	/sbin/rmmod brl_usb
+	echo "Loading brl_usb board driver..."
+	/sbin/insmod /opt/Dropbox/raven_2/usb_driver/brl_usb.ko
+	;;
+
+*)
+	echo "Usage: /etc/init.d/networking {start|stop|restart|force-reload}"
+	exit 1
+	;;
+esac
+
+exit 0
+
+
+

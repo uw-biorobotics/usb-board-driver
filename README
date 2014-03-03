@@ -1,0 +1,18 @@
+
+Device driver for BRL USB Board.
+
+Files:
+  bulk_cypress.c
+  bulk_cypress.h
+
+Compile:
+  make
+
+Load module:
+  insmod bulk_cypress.ko
+
+API:
+  read_cypress
+  write_cypress
+
+#TODO Update me

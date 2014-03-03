@@ -1,0 +1,2 @@
+SUBSYSTEMS=="usb",ATTRS{manufacturer}=="UW BioRobotics Lab",NAME="brl_usb%s{serial}"
+
