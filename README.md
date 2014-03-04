@@ -17,6 +17,9 @@ usb-board-driver
 ## Install ##
 > sudo make install
 
+## Uninstall ##
+> sudo make uninstall
+
 ## Loading the module ##
 > /etc/init.d/brl_usb start
 
