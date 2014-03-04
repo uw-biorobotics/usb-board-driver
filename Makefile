@@ -24,3 +24,4 @@ install:
 
 uninstall: 
 	rm /etc/init.d/brl_usb && rm /etc/udev/rules.d/*brl*
+	rm -Rf /opt/raven_2/usb_driver
