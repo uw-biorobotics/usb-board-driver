@@ -16,10 +16,11 @@ all:
 	$(MAKE) -C $(KERNEL_SRC) SUBDIRS=$(SUBDIR) modules
 
 clean:
-	rm -f *.o *~ core *.mod.c *.ko
-#TODO make an install target that copies init.d and udev rules
+	rm -f *.o *~ core *.mod.c *.ko .*.cmd modules.order Module.symvers
+
 install: 
 	cp -R ./etc /
+	mkdir -p /opt/raven_2/usb_driver && cp brl_usb.ko /opt/raven_2/usb_driver/
 
 uninstall: 
 	rm /etc/init.d/brl_usb && rm /etc/udev/rules.d/*brl*

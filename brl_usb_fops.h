@@ -27,8 +27,7 @@ int test_release(struct inode *inode,
 int test_flush(struct file *file, 
 		      fl_owner_t id);
 
-int test_ioctl(struct inode*,
-		      struct file*,
+long test_ioctl(	      struct file*,
 		      unsigned int,
 		      unsigned long);
 

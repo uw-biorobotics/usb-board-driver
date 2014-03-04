@@ -9,7 +9,7 @@
 #include <linux/init.h>
 #include <linux/slab.h>
 #include <linux/module.h>
-#include <linux/smp_lock.h>
+#include <linux/smp.h>
 #include <linux/usb.h>
 #include "brl_usb_fops.h"
 

@@ -1,1 +1,0 @@
-cmd_/home/davidc/usb_driver/brl_usb.o := ld -m elf_i386   -r -o /home/davidc/usb_driver/brl_usb.o /home/davidc/usb_driver/brl_usb_fops.o /home/davidc/usb_driver/cypress_read_ops.o /home/davidc/usb_driver/cypress_write_ops.o /home/davidc/usb_driver/bulk_cypress.o 

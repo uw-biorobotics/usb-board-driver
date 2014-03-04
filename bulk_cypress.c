@@ -40,6 +40,7 @@ EXPORT_SYMBOL(cypress_request_read);
 //EXPORT_SYMBOL(cypress_write);
 //EXPORT_SYMBOL(cypress_write_no_urb);
 
+
 /**
  * define file operations and stuff. 
  */ 
@@ -50,7 +51,8 @@ static const struct file_operations cypress_fops = {
   .open =	test_open,
   .release=	test_release,
   .flush =	test_flush,
-  .ioctl =      test_ioctl,
+  .unlocked_ioctl =      test_ioctl, 
+  // ioctl has been removed from the linux kernel in favor of unlocked_ioctl
 };
 
 /**
@@ -95,10 +97,10 @@ inline void cypress_delete (struct usb_cypress *dev)
 {
   /* TODO: check semaphores for completion */
   removeNode(dev);
-  usb_buffer_free (dev->udev, dev->bulk_in_size,
+  usb_free_coherent (dev->udev, dev->bulk_in_size,
 		   dev->bulk_in_buffer,
 		   dev->read_urb->transfer_dma);
-  usb_buffer_free (dev->udev, dev->bulk_out_size,
+  usb_free_coherent (dev->udev, dev->bulk_out_size,
 		   dev->bulk_out_buffer,
 		   dev->write_urb->transfer_dma);
   usb_free_urb (dev->read_urb);
@@ -193,7 +195,7 @@ int cypress_probe(struct usb_interface *interface, const struct usb_device_id *i
 		GFP_ATOMIC);  /* allocate memory for our device state and initialize it */
   if( dev == NULL )
     {
-      err("cypress_probe: out of memory.");
+      printk("cypress_probe: out of memory.");
       return -ENOMEM;
     }
   memset(dev, 0x00, sizeof (*dev));
@@ -219,16 +221,16 @@ int cypress_probe(struct usb_interface *interface, const struct usb_device_id *i
 	  dev->read_urb = usb_alloc_urb(0, GFP_ATOMIC);
 	  if( dev->read_urb == NULL )
 	    {
-	      err("No free urbs available");
+	      printk("No free urbs available");
 	      goto error;
 	    }
 	  dev->read_urb->transfer_flags = (URB_NO_TRANSFER_DMA_MAP);
-	  dev->bulk_in_buffer = usb_buffer_alloc (udev,
+	  dev->bulk_in_buffer = usb_alloc_coherent (udev,
 						  buffer_size, GFP_ATOMIC,
 						  &dev->read_urb->transfer_dma);
 	  if( dev->bulk_in_buffer == NULL )
 	    {
-	      err("Couldn't allocate bulk_in_buffer");
+	      printk("Couldn't allocate bulk_in_buffer");
 	      goto error;
 	    }
 	  usb_fill_bulk_urb(dev->read_urb, udev,
@@ -246,7 +248,7 @@ int cypress_probe(struct usb_interface *interface, const struct usb_device_id *i
 	  dev->write_urb = usb_alloc_urb(0, GFP_ATOMIC);
 	  if( dev->write_urb == NULL )
 	    {
-	      err("No free urbs available");
+	      printk("No free urbs available");
 	      goto error;
 	    }
 	  dev->bulk_out_endpointAddr = endpoint->bEndpointAddress;
@@ -261,12 +263,12 @@ int cypress_probe(struct usb_interface *interface, const struct usb_device_id *i
 	  buffer_size = endpoint->wMaxPacketSize;
 	  dev->bulk_out_size = buffer_size;
 	  dev->write_urb->transfer_flags = (URB_NO_TRANSFER_DMA_MAP);
-	  dev->bulk_out_buffer = usb_buffer_alloc (udev,
+	  dev->bulk_out_buffer = usb_alloc_coherent (udev,
 						   buffer_size, GFP_ATOMIC,
 						   &dev->write_urb->transfer_dma);
 	  if( dev->bulk_out_buffer == NULL )
 	    {
-	      err("Couldn't allocate bulk_out_buffer");
+	      printk("Couldn't allocate bulk_out_buffer");
 	      goto error;
 	    }
 	  usb_fill_bulk_urb(dev->write_urb, udev,
@@ -278,7 +280,7 @@ int cypress_probe(struct usb_interface *interface, const struct usb_device_id *i
     }
   if (!(dev->bulk_in_endpointAddr && dev->bulk_out_endpointAddr))
     {
-      err("Couldn't find both bulk-in and bulk-out endpoints");
+      printk("Couldn't find both bulk-in and bulk-out endpoints");
       goto error;
     }
 
@@ -291,7 +293,7 @@ int cypress_probe(struct usb_interface *interface, const struct usb_device_id *i
   retval = usb_register_dev(interface, &cypress_class);
   if (retval) {
     /* something prevented us from registering this driver */
-    err("Not able to get a minor for this device.");
+    printk("Not able to get a minor for this device.");
     usb_set_intfdata(interface, NULL);
     goto error;
   }
@@ -520,7 +522,7 @@ int __init usb_cypress_init(void)
   /* register this driver with the USB subsystem */
   result = usb_register(&cypress_driver);
   if (result) {
-    err("usb_register failed. Error number %d", result);
+    printk("usb_register failed. Error number %d", result);
     return result;
   }
 

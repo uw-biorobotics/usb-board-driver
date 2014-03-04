@@ -14,7 +14,7 @@ case "$1" in
 
 start)
 	echo "Loading brl_usb board driver..."
-	/sbin/insmod /opt/Dropbox/raven_2/usb_driver/brl_usb.ko
+	/sbin/insmod /opt/raven_2/usb_driver/brl_usb.ko
 	;;
 
 stop)
@@ -26,7 +26,7 @@ force-reload|restart)
 	echo "Unloading brl_usb board driver..."
 	/sbin/rmmod brl_usb
 	echo "Loading brl_usb board driver..."
-	/sbin/insmod /opt/Dropbox/raven_2/usb_driver/brl_usb.ko
+	/sbin/insmod /opt/raven_2/usb_driver/brl_usb.ko
 	;;
 
 *)
