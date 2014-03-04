@@ -11,7 +11,18 @@ usb-board-driver
 - cypress_read_ops.h
 - brl_usb_fops.h
 
+## Prerequisites ##
+- recent kernel (2.6 or 3.x series should work fine)
+- kernel headers installed
+
 ## Compile ##
+Ensure that you have your current kernel's headers installed:
+
+> sudo apt-get update
+> sudo apt-get install linux-headers-$(uname -r)
+
+Build the kernel module
+
 > make
 
 ## Install ##
