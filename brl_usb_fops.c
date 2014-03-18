@@ -176,7 +176,6 @@ long test_ioctl( struct file* pfile, unsigned int icommand, unsigned long d){
   char buffer[USB_MAX_OUT_LEN];
   struct usb_cypress *dev = (struct usb_cypress*) pfile->private_data;
   int serial = dev->boardSerialNum;
-
   printk("test ioctl cmd:%d (%d)\n", icommand, dev->boardSerialNum);
   memset(buffer, ENCDAC_RESET, USB_MAX_OUT_LEN);
 

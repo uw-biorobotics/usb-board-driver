@@ -21,6 +21,8 @@ clean:
 install: 
 	cp -R ./etc /
 	mkdir -p /opt/raven_2/usb_driver && cp brl_usb.ko /opt/raven_2/usb_driver/
+	update-rc.d brl_usb defaults
+	groupadd realtime
 
 uninstall: 
 	rm /etc/init.d/brl_usb && rm /etc/udev/rules.d/*brl*
