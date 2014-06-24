@@ -2,7 +2,7 @@
  * File: brl_usb_fops.c
  * Created 6-Oct-2010 by Hawkeye King
  * Updated 3-Mar-2014 by Paul Bartell & David Caballero
- * 
+ * Updated 24-Jun-2014 By Paul Bartell & Danying Hu - Changes for new kernel with new driver version
  *  I implement file system operations for the brl_usb 
  * driver (bulk_cypress.ko).
  *
@@ -10,7 +10,7 @@
 
 #include "bulk_cypress.h"
 #include "brl_usb_fops.h"
-#include <linux/uaccess.h>
+
 extern struct usb_cypress_node USBBoards[];
 extern struct usb_driver cypress_driver;
 
@@ -35,6 +35,11 @@ int test_open(struct inode *inode, struct file *pfile)
   return ret;
 }
 
+/*  test_read()
+ *     - this is the old read file operation function.  Left here for posterity.
+ *  The new file read() function requires an ioctl(4) to initiate a read operation 
+ *  before being called.
+ */
 ssize_t test_read(struct file *pfile, 
 			 char *userBuffer, 
 			 size_t count,
@@ -50,7 +55,7 @@ ssize_t test_read(struct file *pfile,
   struct usb_cypress *dev = (struct usb_cypress*) pfile->private_data;
   int serial = dev->boardSerialNum;
   if(!atomic_read(&dev->fs_operable))
-    return -1;
+    return -ENOSPC;
   atomic_set( &dev->fs_read_busy, 1 );
 
   dev->read_task = current;
@@ -88,21 +93,68 @@ ssize_t test_read(struct file *pfile,
 	  result[channel] = (readBuffer[3*channel+5]<<16) | (readBuffer[3*channel+4]<<8) | (readBuffer[3*channel+3]);
   }
 
-  printk(KERN_ERR "encVals: %d, %d, %d, %d, %d, %d, %d, %d\n",
-	result[0],
-	result[1],
-	result[2],
-	result[3],
-	result[4],
-	result[5],
-	result[6],
-	result[7]
-	);
-
-
  exit:
   atomic_set( &dev->fs_read_busy, 0 );
   return ret;
+}
+
+
+
+/* read_get_data()
+ *    - This is the file read() handler.  
+ *
+ *    NOTE::: ioctl(4) must be called before this function.  Otherwise there will
+ *  be no data to read!!!
+ *
+ */
+ssize_t read_get_data(struct file *pfile, 
+			 char *userBuffer, 
+			 size_t count,
+			 loff_t *ppos)
+{
+  size_t bytesRead=0;
+  int i;
+  struct usb_cypress *dev = (struct usb_cypress*) pfile->private_data;
+  int serial = dev->boardSerialNum;
+
+  if ( !atomic_read( &dev->fs_read_busy ) )
+    {
+      printk("read fail(%d): call ioctl first\n", serial);
+      //      return test_read(pfile, userBuffer, count, ppos);
+      return -ENODEV;
+    }
+
+  else if ( atomic_read( &dev->read_busy) )
+    {
+      printk("readbusy on %d in read_get_data (%d)\n", serial, -EBUSY);
+      return -EBUSY;
+    }
+
+
+  if(!atomic_read(&dev->fs_operable))
+    {
+      return -ENODEV;
+    }
+
+  // Check for usb read completion
+  bytesRead = cypress_get_bytes_read(serial);
+  if (bytesRead <= 0) {
+    printk("Cypress read_get failed readbusy?: %d: No data (%zd)!\n", 
+	   (int)atomic_read(&dev->read_busy), 
+	   bytesRead);
+    bytesRead = -EDEADLK;
+    goto exit;
+  }
+  
+  // Copy data to userspace
+  for (i=0; i<bytesRead; i++) {
+    put_user( (dev->rt_buffer)[i], userBuffer+i);
+  }
+  
+ exit:
+  kfree(dev->rt_buffer); 
+  atomic_set( &dev->fs_read_busy, 0 );
+  return bytesRead;
 }
 
 ssize_t test_write(struct file *pfile, 
@@ -111,13 +163,14 @@ ssize_t test_write(struct file *pfile,
 			  loff_t *poffset)
 {
   /* TODO: put mutex on write for each board serial */
-  size_t cpy_len = length;
+  size_t cpy_len = min(length,(size_t)USB_MAX_OUT_LEN);
   int ret = 0;
-  static char writebuff[1024];
+  static char writebuff[USB_MAX_OUT_LEN];
   struct usb_cypress *dev = (struct usb_cypress*) pfile->private_data;
   int serial= dev->boardSerialNum;
+
   if(!atomic_read(&dev->fs_operable))
-    return -1;
+    return -ENOSPC;
 
   // copy from user to kernel
   ret = copy_from_user(writebuff, in_buffer, cpy_len);
@@ -125,11 +178,21 @@ ssize_t test_write(struct file *pfile,
     printk("copied partial data from userspace\n");
     return cpy_len - ret;
   }
+
+  // check that we're clear to write (not busy)
+  if (atomic_read(&dev->write_busy))
+    {
+      printk("Write op failed (writebusy)\n");
+      return -EBUSY;
+    }
+
+  // send to USB
   ret = cypress_write(serial, writebuff, cpy_len);
-  if (ret<0){
-    printk("Write op failed.\n");
-    return -1;
-  }
+  if (ret < 0)
+    {
+      printk("Write op failed.\n");
+      return ret;
+    }
   return cpy_len;    // on success, return value = cpy_len
 }
   
@@ -172,28 +235,65 @@ int test_flush(struct file *pfile, fl_owner_t id)
   return 0; 
 }
 
-long test_ioctl( struct file* pfile, unsigned int icommand, unsigned long d){
-  char buffer[USB_MAX_OUT_LEN];
+long test_ioctl(struct file* pfile, unsigned int icommand, unsigned long in_readlen){
+  char *buffer;
   struct usb_cypress *dev = (struct usb_cypress*) pfile->private_data;
   int serial = dev->boardSerialNum;
-  printk("test ioctl cmd:%d (%d)\n", icommand, dev->boardSerialNum);
-  memset(buffer, ENCDAC_RESET, USB_MAX_OUT_LEN);
+  int ret=0;
+  size_t readlen = min((size_t)in_readlen, (size_t)USB_MAX_OUT_LEN);
 
+  if(!atomic_read(&dev->fs_operable))
+    {
+      return -ENOSPC;
+    }
+
+  buffer = (char*)kmalloc(USB_MAX_OUT_LEN, GFP_ATOMIC);
+  memset(buffer, ENCDAC_RESET, USB_MAX_OUT_LEN);
   
-  msleep(10);
-  if(atomic_read(&dev->write_busy))
-    msleep(10);
+  // Reset board
 
   if (icommand == 10)
     {
+      printk("ioctl(%d) board %d reset\n", icommand, dev->boardSerialNum);
+      msleep(10);
+      if(atomic_read(&dev->write_busy))
+      msleep(10);
+
       cypress_write(serial, buffer, USB_MAX_OUT_LEN);
       msleep(10);
       cypress_request_read(serial, buffer, 1);
       msleep(10);
       cypress_write(serial, buffer, USB_MAX_OUT_LEN);
       msleep(10);
+      kfree(buffer);
     }
-  return 0;
+
+
+  // Initiate USB read
+  else if (icommand == 4)
+    {
+      if (atomic_read(&dev->read_busy))
+	{ // usb core still requesting data
+	  printk("readbusy on %d in ioctl 4\n", serial);
+	  return -EBUSY;
+	}
+      else if (atomic_read(&dev->fs_read_busy))
+	{ // read_get_data() not called. 
+	  printk("read_get not called\n");
+	  kfree(dev->rt_buffer); 
+	}
+      atomic_set( &dev->fs_read_busy, 1 );
+      
+      // Start read
+      ret = cypress_request_read( serial, buffer, readlen );
+      if (ret < 0 )
+	{
+	  printk("Error requesting read in ioctl: %d\n",ret);
+	}
+    }
+
+  return ret;
 }
+
 
 /* End: File ops  */

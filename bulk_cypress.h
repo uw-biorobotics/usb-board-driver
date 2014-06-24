@@ -12,6 +12,8 @@
 #include <linux/smp.h>
 #include <linux/usb.h>
 #include "brl_usb_fops.h"
+#include <asm/io.h>
+#define PARPORT  0x378
 
 #define debug 0
 
@@ -21,7 +23,7 @@
 #define USB_CYPRESS_MINOR_BASE  192
 
 // Version Information
-#define DRIVER_VERSION "2.3"
+#define DRIVER_VERSION "2.4"
 #define DRIVER_AUTHOR "Phil Roan, Kenneth Fodero, Hawkeye King, Arash Aminpour"
 #define DRIVER_DESC "BRL USB DRIVER"
 

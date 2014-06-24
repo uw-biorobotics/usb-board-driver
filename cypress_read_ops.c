@@ -7,6 +7,7 @@
 
 #include "bulk_cypress.h"
 
+
 extern struct usb_cypress_node USBBoards[];
 
 /**
@@ -22,7 +23,7 @@ ssize_t cypress_read(int serial, char *buffer, size_t count)
   if( !USBBoards[serial].isActive )
     {
       printk(DRIVER_DESC ": Attempted to read from an invalid USB Board (%d)\n",serial);
-      return -EINVAL;
+      return -EFAULT;
     }
   dev = USBBoards[serial].data;
 
@@ -44,7 +45,7 @@ ssize_t cypress_read(int serial, char *buffer, size_t count)
   if (count == 0)
     {
       dbg("%s - read request of 0 bytes", __FUNCTION__);
-      retval = -EINVAL;
+      retval = -EFAULT;
     
       /* unlock the device */
       spin_unlock(&dev->lock);
@@ -128,7 +129,7 @@ ssize_t cypress_request_read(int serial, char *buffer, size_t bytes_requested)
   if( !USBBoards[serial].isActive )
     {
       printk(DRIVER_DESC ": Attempted to read from an invalid USB Board (%d)\n",serial);
-      return -EINVAL;
+      return -EFAULT;
     }
   dev = USBBoards[serial].data;
 
@@ -148,7 +149,7 @@ ssize_t cypress_request_read(int serial, char *buffer, size_t bytes_requested)
   if (bytes_requested == 0)
     {
       dbg("%s - read request of 0 bytes", __FUNCTION__);
-      retval = -EINVAL;
+      retval = -EFAULT;
     
       spin_unlock(&dev->lock); /* unlock the device */
       return retval;    
@@ -159,7 +160,7 @@ ssize_t cypress_request_read(int serial, char *buffer, size_t bytes_requested)
    */
   if( atomic_read(&dev->read_busy) )
     {
-      printk(DRIVER_DESC ": Read already in progress (board %d)\n", serial);
+      printk(DRIVER_DESC ": ReqRead already in progress (board %d)\n", serial);
       retval= -EBUSY;
       spin_unlock(&dev->lock); /* unlock the device */
       return retval;
@@ -172,8 +173,15 @@ ssize_t cypress_request_read(int serial, char *buffer, size_t bytes_requested)
   bytes_requested = min( dev->bulk_in_size, bytes_requested );
   dev->read_urb->transfer_buffer_length = bytes_requested;
   
+  /* disable IRQs for this processor */
+  //  disable_irq_nosync(0);
+
   /* a character device read uses GFP_KERNEL, unless a spinlock is held */
   retval = usb_submit_urb( dev->read_urb, GFP_ATOMIC );
+
+  /* restore irqs */
+  //  enable_irq(0);
+
   if( retval != 0 ) // URB submission unsuccessful
     {
       atomic_set( &dev->read_busy, 0 );
@@ -208,12 +216,13 @@ void cypress_read_bulk_callback (struct urb *urb, struct pt_regs *regs)
   dev->read_actual_length = urb->actual_length;  /* update value with the number of bytes read */
   atomic_set (&dev->read_busy, 0);               /* notify anyone waiting that the read has finished */
 
-  if (atomic_read( &dev->fs_read_busy ) &&
+  /*  if (atomic_read( &dev->fs_read_busy ) &&
       (dev->read_task != NULL) && 
-      dev->read_task->state >= 0 )   /* running,runnable,interruptable,uninterruptable */
+      dev->read_task->state >= 0 )   // running,runnable,interruptable,uninterruptable 
     {
       wake_up_process(dev->read_task);
     }
+*/
 }
 
 /**

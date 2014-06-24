@@ -70,9 +70,17 @@ ssize_t cypress_write(int serial, const char *buffer, size_t count)
   dev->write_urb->transfer_buffer_length = bytes_written;
   dev->write_actual_length = 0;
 
+  /* disable IRQs  */
+  //disable_irq_nosync(0);
+
   /* a character device write uses GFP_KERNEL,
      unless a spinlock is held */
   retval = usb_submit_urb(dev->write_urb, GFP_ATOMIC);
+
+  /* renable irqs */
+  //enable_irq(0);
+
+
   if( retval )
     {
       printk(DRIVER_DESC ": Failed submitting write urb, error %d (board %d)\n",retval, serial);
@@ -85,8 +93,7 @@ ssize_t cypress_write(int serial, const char *buffer, size_t count)
     }
 
  exit:
-  /* unlock the device */
-  spin_unlock(&dev->lock);
+  spin_unlock(&dev->lock);    /* unlock the device */
   return retval;
 }
 

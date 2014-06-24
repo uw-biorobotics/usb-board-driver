@@ -13,6 +13,11 @@ ssize_t test_read(struct file*,
 			 size_t,
 			 loff_t*);
 
+ssize_t read_get_data(struct file*, 
+			 char*, 
+			 size_t,
+		         loff_t*);
+
 ssize_t test_write(struct file*, 
 			  const char*,
 			  size_t, 
@@ -26,8 +31,7 @@ int test_release(struct inode *inode,
 
 int test_flush(struct file *file, 
 		      fl_owner_t id);
-
-long test_ioctl(	      struct file*,
+long test_ioctl(struct file*,
 		      unsigned int,
 		      unsigned long);
 

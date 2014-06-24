@@ -122,11 +122,13 @@ inline void cypress_delete (struct usb_cypress *dev)
 void cypress_disconnect(struct usb_interface *interface)
 {
   struct usb_cypress *dev;
+
+  printk("brl_usb disconnect device...\n");
   
   usb_deregister_dev(interface, &cypress_class);    // Disconnect devfs and give back minor
   dev = usb_get_intfdata(interface);               //  "
   usb_set_intfdata (interface, NULL);               //  "
-
+// Check these spinlocks
   spin_lock(&dev->lock);
   if(atomic_read(&dev->read_busy))
     {
@@ -139,6 +141,7 @@ void cypress_disconnect(struct usb_interface *interface)
   dev->present = 0;                                 // prevent device read, write and ioctl
   spin_unlock(&dev->lock);
   cypress_delete (dev);
+  printk("brl_usb disconnect -> done!\n");
 }
 
 /**
