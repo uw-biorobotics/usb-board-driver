@@ -26,7 +26,7 @@ int test_open(struct inode *inode, struct file *pfile)
   struct usb_cypress *dev = getDev(inode);
   pfile->private_data = dev;
   dev->boardSerialNum = getSerialNum(dev);
-  printk("test open (%d)\n\n", dev->boardSerialNum);
+  printk("test open (%d)\n", dev->boardSerialNum);
 
   if (ret == 0) {
     atomic_set( &dev->fs_operable, 1);

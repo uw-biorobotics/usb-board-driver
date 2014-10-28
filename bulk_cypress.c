@@ -40,18 +40,18 @@ EXPORT_SYMBOL(cypress_request_read);
 //EXPORT_SYMBOL(cypress_write);
 //EXPORT_SYMBOL(cypress_write_no_urb);
 
-
 /**
  * define file operations and stuff. 
  */ 
 static const struct file_operations cypress_fops = {
   .owner =	THIS_MODULE,
-  .read =	test_read,
+  //  .read =	test_read,
+  .read =	read_get_data,
   .write =	test_write,
   .open =	test_open,
   .release=	test_release,
   .flush =	test_flush,
-  .unlocked_ioctl =      test_ioctl, 
+  .unlocked_ioctl = test_ioctl,
   // ioctl has been removed from the linux kernel in favor of unlocked_ioctl
 };
 
@@ -227,8 +227,9 @@ int cypress_probe(struct usb_interface *interface, const struct usb_device_id *i
 	      printk("No free urbs available");
 	      goto error;
 	    }
-	  dev->read_urb->transfer_flags = (URB_NO_TRANSFER_DMA_MAP);
-	  dev->bulk_in_buffer = usb_alloc_coherent (udev,
+	  dev->read_urb->transfer_flags = (URB_NO_TRANSFER_DMA_MAP|URB_ISO_ASAP);
+	  
+  dev->bulk_in_buffer = usb_alloc_coherent (udev,
 						  buffer_size, GFP_ATOMIC,
 						  &dev->read_urb->transfer_dma);
 	  if( dev->bulk_in_buffer == NULL )
