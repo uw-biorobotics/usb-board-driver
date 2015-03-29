@@ -227,7 +227,7 @@ int cypress_probe(struct usb_interface *interface, const struct usb_device_id *i
 	      printk("No free urbs available");
 	      goto error;
 	    }
-	  dev->read_urb->transfer_flags = (URB_NO_TRANSFER_DMA_MAP|URB_ISO_ASAP);
+	  dev->read_urb->transfer_flags = (URB_NO_TRANSFER_DMA_MAP);
 	  
   dev->bulk_in_buffer = usb_alloc_coherent (udev,
 						  buffer_size, GFP_ATOMIC,

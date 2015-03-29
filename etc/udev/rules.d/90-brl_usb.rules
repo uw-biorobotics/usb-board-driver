@@ -1,2 +1,2 @@
-SUBSYSTEMS=="usb",ATTRS{manufacturer}=="UW BioRobotics Lab",NAME="brl_usb%s{serial}", MODE="0666"
+SUBSYSTEMS=="usb",ATTRS{manufacturer}=="UW BioRobotics Lab",SYMLINK="brl_usb%s{serial}", MODE="0666"
 
