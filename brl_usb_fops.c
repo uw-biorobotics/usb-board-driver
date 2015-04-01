@@ -10,6 +10,7 @@
 
 #include "bulk_cypress.h"
 #include "brl_usb_fops.h"
+#include <linux/uaccess.h>
 
 extern struct usb_cypress_node USBBoards[];
 extern struct usb_driver cypress_driver;

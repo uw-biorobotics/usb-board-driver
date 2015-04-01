@@ -97,10 +97,10 @@ inline void cypress_delete (struct usb_cypress *dev)
 {
   /* TODO: check semaphores for completion */
   removeNode(dev);
-  usb_free_coherent (dev->udev, dev->bulk_in_size,
+  usb_buffer_free( dev->udev, dev->bulk_in_size,
 		   dev->bulk_in_buffer,
 		   dev->read_urb->transfer_dma);
-  usb_free_coherent (dev->udev, dev->bulk_out_size,
+  usb_buffer_free( dev->udev, dev->bulk_out_size,
 		   dev->bulk_out_buffer,
 		   dev->write_urb->transfer_dma);
   usb_free_urb (dev->read_urb);
@@ -229,9 +229,9 @@ int cypress_probe(struct usb_interface *interface, const struct usb_device_id *i
 	    }
 	  dev->read_urb->transfer_flags = (URB_NO_TRANSFER_DMA_MAP);
 	  
-  dev->bulk_in_buffer = usb_alloc_coherent (udev,
-						  buffer_size, GFP_ATOMIC,
-						  &dev->read_urb->transfer_dma);
+  dev->bulk_in_buffer = usb_buffer_alloc( udev,
+					  buffer_size, GFP_ATOMIC,
+					  &dev->read_urb->transfer_dma);
 	  if( dev->bulk_in_buffer == NULL )
 	    {
 	      printk("Couldn't allocate bulk_in_buffer");
@@ -267,7 +267,7 @@ int cypress_probe(struct usb_interface *interface, const struct usb_device_id *i
 	  buffer_size = endpoint->wMaxPacketSize;
 	  dev->bulk_out_size = buffer_size;
 	  dev->write_urb->transfer_flags = (URB_NO_TRANSFER_DMA_MAP);
-	  dev->bulk_out_buffer = usb_alloc_coherent (udev,
+	  dev->bulk_out_buffer = usb_buffer_alloc( udev,
 						   buffer_size, GFP_ATOMIC,
 						   &dev->write_urb->transfer_dma);
 	  if( dev->bulk_out_buffer == NULL )
