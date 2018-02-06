@@ -1,0 +1,1 @@
+SUBSYSTEMS=="usb",ATTRS{manufacturer}=="Applied Dexterity",SYMLINK="brl_usb%s{serial}", MODE="0666"
