@@ -19,6 +19,7 @@ usb-board-driver
 Ensure that you have your current kernel's headers installed:
 
 > sudo apt-get update
+
 > sudo apt-get install linux-headers-$(uname -r)
 
 Build the kernel module
