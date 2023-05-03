@@ -13,7 +13,7 @@ brl_usb-objs := brl_usb_fops.o \
 	bulk_cypress.o 
 
 all:	
-	$(MAKE) -C $(KERNEL_SRC) SUBDIRS=$(SUBDIR) modules
+	$(MAKE) -C $(KERNEL_SRC) M=$(SUBDIR) modules
 
 clean:
 	rm -f *.o *~ core *.mod.c *.ko .*.cmd modules.order Module.symvers
