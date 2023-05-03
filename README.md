@@ -27,11 +27,11 @@ Build the kernel module
 > make
 
 ## Install ##
-Copy usb driver folder to usr/src with the current version number, for example (11/2018):
-> cp -R ../usb-board-driver /usr/src/brl_usb-2.4
+Copy usb driver folder to usr/src with the current version number, for example (5/2023):
+> cp -R ../usb-board-driver /usr/src/brl_usb-2.5.2
 
 Use dkms to install and manage the module. This should load the module on startup.
-> sudo dkms install -m brl_usb -v 2.4
+> sudo dkms install -m brl_usb -v 2.5.2
 
 ## Uninstall ##
 > sudo make uninstall
