@@ -1,1 +1,3 @@
-SUBSYSTEMS=="usb",ATTRS{manufacturer}=="Applied Dexterity",SYMLINK="brl_usb%s{serial}", MODE="0666"
+SUBSYSTEMS=="usb",ATTRS{product}=="8 DOF USB Board",ENV{BRL_USB_BOARD}="1",ENV{BRL_USB_SN}="$attr{serial}"
+
+SUBSYSTEM=="usbmisc",ENV{BRL_USB_BOARD}=="1",SYMLINK+="brl_usb$env{BRL_USB_SN}",GROUP="realtime",OWNER="raven",MODE="0666"
